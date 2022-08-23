@@ -160,11 +160,11 @@ def main():
         cv2.putText(frame, lpc_txt, (5, 30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (68, 42, 32), 2)
         cv2.putText(frame, opc_txt, (5, 60), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 190, 246), 2)
 
-        out = cv2.VideoWriter('result.mp4', -1, 20.0, (640,480))
+        #out = cv2.VideoWriter('result.mp4', -1, 20.0, (640,480))
 
         cv2.imshow("EnYOUmerate", frame)
         cv2.imshow("People Count", image)
-        out.write(frame)
+        #out.write(frame)
         key = cv2.waitKey(1)
         if key == ord('q'):
             break
