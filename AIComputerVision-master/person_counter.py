@@ -60,10 +60,13 @@ def non_max_suppression_fast(boxes, overlapThresh):
 
 
 def main():
-    cap = cv2.VideoCapture('testvideo2.mp4')
+    cap = cv2.VideoCapture('store_cctv.mp4')
     image = cv2.imread('people count.png')
     image = imutils.resize(image, width=500)
 
+    cam_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) + 0.5)
+    cam_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) + 0.5)
+    size = (cam_width, cam_height)
 
 
     fps_start_time = datetime.datetime.now()
@@ -72,21 +75,25 @@ def main():
     lpc_count = 0
     opc_count = 0
     object_id_list = []
+
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter('result4.avi', fourcc, 20.0, size)
+
     while True:
         ret, frame = cap.read()
-        frame = imutils.resize(frame, width=600)
+        #frame = imutils.resize(frame, width=640, height=480)
         total_frames = total_frames + 1
 
         cv2.imwrite("image.jpg", frame)
 
-        area_1 = [(203, 44), (336, 41),(340,175),(374,175), (410, 334), (135, 335), (180, 176), (212,176)]
-
-        for area in [area_1]:
-            cv2.polylines(frame, [np.array(area, np.int32)], True, (15, 220, 10), 6)
+        #area_1 = [(203, 44), (336, 41),(340,175),(374,175), (410, 334), (135, 335), (180, 176), (212,176)]
+        area_1 = [(435,100),(715,91),(715,367),(795,366),(905,717),(260,717),(394,369),(463,369)]
+        #for area in [area_1]:
+            #cv2.polylines(frame, [np.array(area, np.int32)], True, (15, 220, 10), 6)
 
         #result = cv2.pointPolygonTest(np.array(area_1,np.int32), ())
 
-        cv2.line(frame, (341,174),(212,174),(0,0,255),4)
+        #cv2.line(frame, (463,369),(715,366),(0,0,255),4)
 
         (H, W) = frame.shape[:2]
 
@@ -97,7 +104,7 @@ def main():
         rects = []
         for i in np.arange(0, person_detections.shape[2]):
             confidence = person_detections[0, 0, i, 2]
-            if confidence > 0.3:
+            if confidence > 0.7:
                 idx = int(person_detections[0, 0, i, 1])
 
                 if CLASSES[idx] != "person":
@@ -131,8 +138,21 @@ def main():
             x2 = int(x2)
             y2 = int(y2)
 
+            kernel_width = (W // 7) | 1
+            kernel_height = (H // 7) | 1
+
             cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2)
+
+            face = frame[y1: y2, x1: x2]
+            # apply gaussian blur to this face
+            face = cv2.GaussianBlur(face, (kernel_width, kernel_height), 2)
+            #face = cv2.blur(face, (kernel_width, kernel_height))
+            #face = cv2.boxFilter(face, -1, (25, 25))
+            #face = cv2.medianBlur(face, ksize=5)
+            # put the blurred face into the original image
+            frame[y1: y2, x1: x2] = face
             text = "ID: {}".format(objectId)
+
             cv2.putText(frame, text, (x1, y1-5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 255), 1)
 
             if objectId not in object_id_list:
@@ -157,19 +177,19 @@ def main():
         lpc_txt = "Live Person Count: {}".format(lpc_count)
         opc_txt = "Overall Person Count: {}".format(opc_count)
 
-        cv2.putText(frame, lpc_txt, (5, 30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (68, 42, 32), 2)
-        cv2.putText(frame, opc_txt, (5, 60), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 190, 246), 2)
+        #cv2.putText(frame, lpc_txt, (5, 30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (68, 42, 32), 2)
+        #cv2.putText(frame, opc_txt, (5, 60), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 190, 246), 2)
 
-        #out = cv2.VideoWriter('result.mp4', -1, 20.0, (640,480))
 
         cv2.imshow("EnYOUmerate", frame)
         cv2.imshow("People Count", image)
-        #out.write(frame)
+        out.write(frame)
         key = cv2.waitKey(1)
         if key == ord('q'):
             break
 
+    cap.release()
+    out.release()
     cv2.destroyAllWindows()
-
 
 main()
